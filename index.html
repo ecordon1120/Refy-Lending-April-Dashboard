@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Refy Lending Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0c10;--surface:#111318;--surface2:#1a1d26;--border:#252833;--accent:#00e5a0;--accent2:#5b8fff;--accent3:#ff6b6b;--accent4:#ffc94d;--text:#e8eaf0;--muted:#6b7280;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:200;gap:12px;flex-wrap:wrap;}
+.logo{display:flex;align-items:center;gap:10px;font-size:21px;font-weight:800;}
+.logo-dot{width:9px;height:9px;background:var(--accent);border-radius:50%;box-shadow:0 0 10px var(--accent);}
+.header-center{display:flex;gap:4px;}
+.tab-btn{padding:7px 18px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:.5px;cursor:pointer;text-transform:uppercase;transition:all .15s;}
+.tab-btn.active{background:var(--accent);color:#000;border-color:var(--accent);}
+.tab-btn:hover:not(.active){border-color:#444;color:var(--text);}
+.header-right{display:flex;align-items:center;gap:10px;}
+.source-badge{display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid rgba(255,201,77,.3);background:rgba(255,201,77,.07);color:var(--accent4);}
+.source-badge.live{border-color:rgba(0,229,160,.3);background:rgba(0,229,160,.07);color:var(--accent);}
+.source-badge.error{border-color:rgba(255,107,107,.3);background:rgba(255,107,107,.07);color:var(--accent3);}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.sync-bar{display:flex;align-items:center;gap:12px;padding:10px 28px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.sync-btn{display:flex;align-items:center;gap:8px;padding:7px 16px;background:var(--accent);color:#000;border:none;border-radius:8px;cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;transition:opacity .2s;}
+.sync-btn:hover{opacity:.85;}
+.sync-btn:disabled{opacity:.4;cursor:not-allowed;}
+.last-updated{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-left:auto;}
+.loading-overlay{position:fixed;inset:0;background:rgba(10,12,16,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:999;}
+.loading-overlay.hidden{display:none;}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-family:'DM Mono',monospace;font-size:13px;color:var(--muted);}
+.page{display:none;padding:22px 28px;max-width:1600px;margin:0 auto;}
+.page.active{display:block;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:22px;}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--c,var(--accent));}
+.kpi-label{font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.kpi-val{font-family:'DM Mono',monospace;font-size:24px;font-weight:500;color:var(--c,var(--text));line-height:1;margin-bottom:3px;}
+.kpi-sub{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+.row-full{margin-bottom:16px;}
+@media(max-width:960px){.row2,.row3{grid-template-columns:1fr;}}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border);}
+.pt{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);}
+.pb2{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);background:var(--surface2);padding:2px 8px;border-radius:4px;border:1px solid var(--border);}
+.pb{padding:16px;}
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);font-weight:600;padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+.tbl td{padding:8px 10px;border-bottom:1px solid #1a1d26;font-family:'DM Mono',monospace;font-size:11px;white-space:nowrap;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:var(--surface2);}
+.tbl-wrap{overflow-x:auto;}
+.bx{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;font-family:'DM Mono',monospace;}
+.bx-g{background:rgba(0,229,160,.13);color:var(--accent);}
+.bx-b{background:rgba(91,143,255,.13);color:var(--accent2);}
+.bx-r{background:rgba(255,107,107,.13);color:var(--accent3);}
+.bx-y{background:rgba(255,201,77,.13);color:var(--accent4);}
+.bx-p{background:rgba(167,139,250,.13);color:#a78bfa;}
+.bars{display:flex;flex-direction:column;gap:9px;}
+.bar-row{display:flex;align-items:center;gap:9px;}
+.bar-lbl{font-size:12px;font-weight:600;min-width:88px;}
+.bar-track{flex:1;height:24px;background:var(--surface2);border-radius:4px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:7px;font-family:'DM Mono',monospace;font-size:10px;transition:width .6s cubic-bezier(.4,0,.2,1);white-space:nowrap;color:#000;}
+.bar-stat{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);min-width:65px;text-align:right;}
+.donut-wrap{display:flex;align-items:center;gap:18px;}
+.donut-legend{display:flex;flex-direction:column;gap:8px;flex:1;}
+.lg-item{display:flex;align-items:center;gap:7px;font-size:11px;}
+.lg-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0;}
+.ring-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.ring-inner{position:relative;width:120px;height:120px;}
+.ring-label{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
+.ring-pct{font-family:'DM Mono',monospace;font-size:22px;font-weight:500;}
+.ring-sub{font-size:9px;color:var(--muted);font-weight:600;letter-spacing:.4px;}
+.sub-row{display:flex;align-items:flex-start;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);gap:10px;}
+.sub-row:last-child{border-bottom:none;}
+.sub-name{font-size:13px;font-weight:700;}
+.sub-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px;line-height:1.6;}
+.sub-pills{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0;}
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">Fetching live data from Google Sheets…</div>
+</div>
+
+<header>
+  <div class="logo"><div class="logo-dot"></div>Refy<span style="color:var(--accent)">.</span></div>
+  <div class="header-center">
+    <button class="tab-btn active" onclick="showPage('closing',event)">Closing &amp; Subs</button>
+    <button class="tab-btn" onclick="showPage('funded',event)">Funded</button>
+  </div>
+  <div class="header-right">
+    <div class="source-badge" id="srcBadge"><div class="badge-dot"></div><span id="srcLabel">Loading…</span></div>
+  </div>
+</header>
+
+<div class="sync-bar">
+  <button class="sync-btn" id="syncBtn" onclick="fetchAllSheets()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+    Refresh from Google Sheets
+  </button>
+  <span class="last-updated" id="lastUpdated">Not yet loaded</span>
+</div>
+
+<!-- PAGE 1 — CLOSING & SUBS -->
+<div class="page active" id="page-closing">
+  <div class="kpi-grid" id="kpi-closing"></div>
+  <div class="row2">
+    <div class="panel">
+      <div class="ph"><span class="pt">Monthly LO Summary</span><span class="pb2" id="month-label">April 2026</span></div>
+      <div class="pb tbl-wrap">
+        <table class="tbl" id="lo-month-tbl">
+          <thead><tr><th>LO</th><th>Subs</th><th>Sold</th><th>GAP</th><th>VSC</th><th>T&W</th><th>Pkg</th><th>Total Rev</th><th>Rev/Deal</th><th>Funded</th></tr></thead>
+          <tbody id="lo-month-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><span class="pt">Submission Pipeline</span><span class="pb2" id="sub-badge">—</span></div>
+      <div class="pb" id="sub-panel" style="max-height:320px;overflow-y:auto;padding-right:10px;"></div>
+    </div>
+  </div>
+  <div class="row3">
+    <div class="panel"><div class="ph"><span class="pt">Lender Split</span></div><div class="pb" id="lender-panel"></div></div>
+    <div class="panel"><div class="ph"><span class="pt">State Mix</span></div><div class="pb" id="state-panel"></div></div>
+    <div class="panel"><div class="ph"><span class="pt">Monthly Pace</span></div><div class="pb" id="pace-panel"></div></div>
+  </div>
+  <div class="row-full">
+    <div class="panel">
+      <div class="ph"><span class="pt">Closed Deals</span><span class="pb2" id="closed-badge">—</span></div>
+      <div class="tbl-wrap" id="closed-panel"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 2 — FUNDED -->
+<div class="page" id="page-funded">
+  <div class="kpi-grid" id="kpi-funded"></div>
+  <div class="row2">
+    <div class="panel"><div class="ph"><span class="pt">Revenue by LO</span></div><div class="pb" id="funded-lo-bars"></div></div>
+    <div class="panel"><div class="ph"><span class="pt">Funded by Lender</span></div><div class="pb" id="funded-lender"></div></div>
+  </div>
+  <div class="row-full">
+    <div class="panel">
+      <div class="ph"><span class="pt">Funded Deals</span><span class="pb2" id="funded-badge">—</span></div>
+      <div class="tbl-wrap" id="funded-panel"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const RELAY_URL = 'https://script.google.com/macros/s/AKfycbzTpyJRGbcw9rt7v3oS47-NfmGJJquQCrbsV1BbZ2i6ksVvXKX6SAqgsEQTRGraj9LZ/exec';
+
+async function fetchSheet(name) {
+  const res = await fetch(`${RELAY_URL}?sheet=${encodeURIComponent(name)}`);
+  if (!res.ok) throw new Error(`Failed to fetch: ${name}`);
+  const data = await res.json();
+  return data.map(row => { const o={}; Object.keys(row).forEach(k=>o[k]=row[k]==null?'':String(row[k])); return o; });
+}
+
+async function fetchAllSheets() {
+  const btn=document.getElementById('syncBtn'),overlay=document.getElementById('loadingOverlay'),lt=document.getElementById('loadingText');
+  btn.disabled=true; overlay.classList.remove('hidden');
+  try {
+    lt.textContent='Fetching Closed sheet…';   const closed  = await fetchSheet('Closed');
+    lt.textContent='Fetching Sub Sheet…';       const sub     = await fetchSheet('Sub Sheet');
+    lt.textContent='Fetching Funded sheet…';    const funded  = await fetchSheet('Funded');
+    lt.textContent='Rendering dashboard…';
+    renderClosing(closed, sub, funded);
+    renderFunded(funded, closed);
+    document.getElementById('srcBadge').className='source-badge live';
+    document.getElementById('srcLabel').textContent='Live · Google Sheets';
+    document.getElementById('lastUpdated').textContent='Last synced: '+new Date().toLocaleTimeString();
+  } catch(err) {
+    console.error(err);
+    document.getElementById('srcBadge').className='source-badge error';
+    document.getElementById('srcLabel').textContent='Error loading data';
+    document.getElementById('lastUpdated').textContent='Sync failed — check sheet permissions';
+    alert('Could not load data: '+err.message);
+  } finally { btn.disabled=false; overlay.classList.add('hidden'); }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
+const LC_COLORS=['var(--accent)','var(--accent2)','var(--accent4)','var(--accent3)','#a78bfa','#f472b6'];
+const loColorMap={};
+function lc(lo){const k=(lo||'').toLowerCase().trim();if(!loColorMap[k]){loColorMap[k]=LC_COLORS[Object.keys(loColorMap).length%LC_COLORS.length];}return loColorMap[k];}
+function f$(v){const n=parseFloat(String(v).replace(/[$,]/g,''));if(isNaN(n)||n===0)return'—';return'$'+n.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});}
+function fN(v){const n=parseInt(String(v).replace(/,/g,''));return isNaN(n)?'—':String(n);}
+function bx(v,cls){if(!v||v==='—'||v==='0'||v==='NaN')return'—';return`<span class="bx bx-${cls}">${v}</span>`;}
+function num(v){return parseFloat(String(v).replace(/[$,]/g,''))||0;}
+function barRow(lbl,val,max,color,stat){const pct=Math.max(2,Math.round(val/max*100));return`<div class="bar-row"><span class="bar-lbl">${lbl}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}">${pct>15?stat:''}</div></div><span class="bar-stat">${pct<=15?stat:''}</span></div>`;}
+function donut(slices){const r=45,cx=60,cy=60,sw=14,ci=2*Math.PI*r;let off=ci/4,arcs='';slices.forEach(s=>{const l=s.p*ci;arcs+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.c}" stroke-width="${sw}" stroke-dasharray="${l} ${ci-l}" stroke-dashoffset="${off}" stroke-linecap="butt" transform="rotate(-90 ${cx} ${cy})"/>`;off-=l;});return`<svg width="120" height="120" viewBox="0 0 120 120"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1a1d26" stroke-width="${sw}"/>${arcs}</svg>`;}
+function ring(pct,col){const r=45,cx=60,cy=60,sw=8,ci=2*Math.PI*r,l=pct*ci;return`<svg width="120" height="120" viewBox="0 0 120 120"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1a1d26" stroke-width="${sw}"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-dasharray="${l} ${ci-l}" stroke-dashoffset="${ci/4}" stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/></svg>`;}
+
+function showPage(id,event){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(event&&event.target)event.target.classList.add('active');
+}
+
+// ── Render Closing & Subs page ────────────────────────────────────
+function renderClosing(closed, sub, funded) {
+  const activeClosed = closed.filter(r=>r['LO Name']&&r['LO Name'].trim()&&r['Removed']!=='Remove');
+  const validSub     = sub.filter(r=>r['App #']&&String(r['App #']).trim()&&(r['LO Name']||'').trim()&&r['Subbed']!==false&&String(r['Subbed']).toUpperCase()!=='FALSE'&&String(r['Subbed']).trim()!=='');
+  const validFunded  = funded.filter(r=>r['App #']&&(r['LO Name']||'').trim()&&String(r['Funded']).toUpperCase()==='TRUE');
+
+  // Aggregate per LO using lowercase key to handle case differences
+  const loMap={};
+  const loKey=s=>String(s||'').trim().toLowerCase();
+  const ensureLO=(key,displayName)=>{if(!loMap[key])loMap[key]={name:displayName,subs:0,sold:0,gap:0,vsc:0,tw:0,rev:0,funded:0};};
+  activeClosed.forEach(r=>{
+    const raw=(r['LO Name']||'').trim(); if(!raw)return;
+    const key=loKey(raw); ensureLO(key,raw);
+    loMap[key].sold++;
+    if(num(r['GAP Total'])>0)loMap[key].gap++;
+    if(num(r['VSC Total'])>0)loMap[key].vsc++;
+    if(num(r['T & W Total'])>0)loMap[key].tw++;
+    loMap[key].rev+=num(r['Total Rev']);
+  });
+  validSub.forEach(r=>{
+    const raw=(r['LO Name']||'').trim();
+    if(!raw)return;
+    const key=loKey(raw);
+    ensureLO(key,raw);
+    loMap[key].subs++;
+  });
+  validFunded.forEach(r=>{const raw=(r['LO Name']||'').trim();if(!raw)return;const key=loKey(raw);ensureLO(key,raw);loMap[key].funded++;});
+
+  const totalSubs=validSub.length, totalSold=activeClosed.length;
+  const totalRev=activeClosed.reduce((s,r)=>s+num(r['Total Rev']),0);
+  const totalFunded=validFunded.length;
+  const avgRev=totalSold>0?totalRev/totalSold:0;
+  const totalGAP=activeClosed.filter(r=>num(r['GAP Total'])>0).length;
+  const totalVSC=activeClosed.filter(r=>num(r['VSC Total'])>0).length;
+  const totalTW =activeClosed.filter(r=>num(r['T & W Total'])>0).length;
+
+  // KPIs
+  document.getElementById('kpi-closing').innerHTML=[
+    {l:'Total Subs',    v:String(totalSubs),   s:'Submission pipeline',                                          c:'var(--accent)'},
+    {l:'Deals Sold',    v:String(totalSold),   s:'Closed deals',                                                 c:'var(--accent2)'},
+    {l:'Total Revenue', v:f$(totalRev),         s:'Month to date',                                                c:'var(--accent2)'},
+    {l:'Rev / Deal',    v:f$(avgRev),           s:'Average',                                                      c:'var(--accent4)'},
+    {l:'Funded',        v:String(totalFunded),  s:'Confirmed funded',                                             c:'var(--accent3)'},
+    {l:'GAP',           v:String(totalGAP),     s:totalSold>0?Math.round(totalGAP/totalSold*100)+'% pen.':'—',   c:'var(--accent3)'},
+    {l:'VSC',           v:String(totalVSC),     s:totalSold>0?Math.round(totalVSC/totalSold*100)+'% pen.':'—',   c:'var(--accent2)'},
+    {l:'T&W',           v:String(totalTW),      s:totalSold>0?Math.round(totalTW/totalSold*100)+'% pen.':'—',    c:'var(--accent4)'},
+  ].map(k=>`<div class="kpi" style="--c:${k.c}"><div class="kpi-label">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
+
+  // LO Summary table
+  const loEntries=Object.values(loMap).sort((a,b)=>b.rev-a.rev);
+  document.getElementById('lo-month-body').innerHTML=
+    loEntries.map(d=>`<tr><td style="color:${lc(d.name)};font-weight:700">${d.name}</td><td>${d.subs}</td><td>${d.sold}</td><td>${d.gap>0?bx(String(d.gap),'g'):'—'}</td><td>${d.vsc>0?bx(String(d.vsc),'b'):'—'}</td><td>${d.tw>0?bx(String(d.tw),'y'):'—'}</td><td>—</td><td style="color:var(--accent)">${f$(d.rev)}</td><td>${f$(d.sold>0?d.rev/d.sold:0)}</td><td>${d.funded>0?bx(String(d.funded),'g'):'—'}</td></tr>`).join('')+
+    `<tr style="border-top:1px solid var(--border);font-weight:700"><td style="color:var(--muted)">Totals</td><td>${totalSubs}</td><td>${totalSold}</td><td>${bx(String(totalGAP),'g')}</td><td>${bx(String(totalVSC),'b')}</td><td>${bx(String(totalTW),'y')}</td><td></td><td style="color:var(--accent)">${f$(totalRev)}</td><td>${f$(avgRev)}</td><td>${bx(String(totalFunded),'g')}</td></tr>`;
+
+  // Sub pipeline
+  document.getElementById('sub-badge').textContent=validSub.length+' subs';
+  document.getElementById('sub-panel').innerHTML=validSub.length===0
+    ?'<div style="color:var(--muted);text-align:center;padding:20px;font-size:13px">No submissions</div>'
+    :validSub.slice().reverse().map(r=>{
+      const lo=(r['LO Name']||'').trim();
+      const name=((r['Customer First Name']||'')+' '+(r['Customer Last name']||r['Customer Last Name']||'')).trim()||'—';
+      const date=(r['Date']||'').toString().split('T')[0]||'—';
+      const amt=num(r['Amount Requested']);
+      const approved=String(r['Approved']).toUpperCase()==='TRUE';
+      const declined=String(r['Decline']).toUpperCase()==='TRUE';
+      const counter=String(r['Counter']).toUpperCase()==='TRUE';
+      const dup=r['Duplicate']&&r['Duplicate'].trim()&&r['Duplicate'].toUpperCase()!=='FALSE'&&r['Duplicate']!=='';
+      const status=approved?bx('Approved','g'):declined?bx('Declined','r'):counter?bx('Counter','y'):bx('Pending','b');
+      return`<div class="sub-row"><div><div class="sub-name">${name}</div><div class="sub-meta">#${r['App #']} · ${date} · ${r['State']||'—'} · ${r['Lender']||'—'}${r['Current Lien Holder']?'<br>Current: '+r['Current Lien Holder']:''}</div></div><div class="sub-pills"><span class="bx" style="background:rgba(91,143,255,.1);color:${lc(lo)}">${lo}</span>${amt>0?bx(f$(amt),'g'):''}${status}${dup?bx('Dup','r'):''}</div></div>`;
+    }).join('');
+
+  // Lender donut from Closed tab
+  const lMap={};
+  activeClosed.forEach(r=>{const l=(r['Lender']||'').trim();if(l)lMap[l]=(lMap[l]||0)+1;});
+  const lT=Object.values(lMap).reduce((a,b)=>a+b,0)||1;
+  const LC2=['var(--accent)','var(--accent2)','var(--accent4)','var(--accent3)','#a78bfa'];
+  const lE=Object.entries(lMap).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('lender-panel').innerHTML=lE.length===0
+    ?'<div style="color:var(--muted);text-align:center;padding:20px;font-size:13px">No data</div>'
+    :`<div class="donut-wrap">${donut(lE.map((e,i)=>({p:e[1]/lT,c:LC2[i%LC2.length]})))}<div class="donut-legend">${lE.map((e,i)=>`<div class="lg-item"><div class="lg-dot" style="background:${LC2[i%LC2.length]}"></div><span>${e[0]}</span><span style="margin-left:auto;font-family:'DM Mono',monospace;color:var(--muted)">${Math.round(e[1]/lT*100)}%</span></div>`).join('')}</div></div>`;
+
+  // State bars from Sub tab
+  const sMap={};
+  validSub.forEach(r=>{const s=(r['State']||r['Customer State']||'').trim();if(s)sMap[s]=(sMap[s]||0)+1;});
+  const sMax=Math.max(...Object.values(sMap),1);
+  document.getElementById('state-panel').innerHTML='<div class="bars">'+Object.entries(sMap).sort((a,b)=>b[1]-a[1]).map(([s,n])=>barRow(s,n,sMax,'var(--accent2)',n+' subs')).join('')+'</div>';
+
+  // Monthly pace ring
+  const now=new Date(),daysPassed=now.getDate(),daysInMonth=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  const monthPct=daysPassed/daysInMonth;
+  document.getElementById('pace-panel').innerHTML=
+    `<div class="ring-wrap">`+
+    `<div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--muted);text-align:center;padding:20px">Day ${daysPassed} of ${daysInMonth}</div>`+
+    `<div style="width:100%;margin-top:4px"><div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:10px;color:var(--muted);font-family:'DM Mono',monospace"><span>Month Progress</span><span>${Math.round(monthPct*100)}%</span></div><div class="bar-track" style="height:8px"><div class="bar-fill" style="width:${monthPct*100}%;background:var(--accent4)"></div></div></div>`+
+    `<div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);text-align:center;margin-top:12px">Revenue to date: ${f$(totalRev)}</div>`+
+    `</div>`;
+
+  // Closed deals table
+  document.getElementById('closed-badge').textContent=activeClosed.length+' deals';
+  document.getElementById('closed-panel').innerHTML='<table class="tbl"><thead><tr><th>Date</th><th>App #</th><th>LO</th><th>Customer</th><th>State</th><th>Lender</th><th>Payoff</th><th>Rate</th><th>Term</th><th>GAP</th><th>VSC</th><th>T&W</th><th>Doc Fee</th><th>Total Rev</th></tr></thead><tbody>'+
+    activeClosed.map(r=>{
+      const lo=(r['LO Name']||'').trim();
+      const name=((r['Customer First Name']||'')+' '+(r['Customer Last Name']||'')).trim()||'—';
+      const ts=(r['Timestamp']||r['Date']||'').toString().split('T')[0]||'—';
+      const rate=parseFloat(String(r['Rate']||'0').replace(/[%,]/g,''));
+      const rd=rate>0?(rate<1?(rate*100).toFixed(2)+'%':rate.toFixed(2)+'%'):'—';
+      return`<tr><td style="color:var(--muted)">${ts}</td><td>${r['App #']}</td><td style="color:${lc(lo)};font-weight:700">${lo}</td><td>${name}</td><td>${r['Customer State']||'—'}</td><td>${r['Lender']||'—'}</td><td>${f$(r['Payoff'])}</td><td>${rd}</td><td>${r['Term']||'—'}</td><td>${num(r['GAP Total'])>0?bx(f$(r['GAP Total']),'g'):'—'}</td><td>${num(r['VSC Total'])>0?bx(f$(r['VSC Total']),'b'):'—'}</td><td>${num(r['T & W Total'])>0?bx(f$(r['T & W Total']),'y'):'—'}</td><td>${f$(r['Doc Fee'])}</td><td style="color:var(--accent);font-weight:700">${f$(r['Total Rev'])}</td></tr>`;
+    }).join('')+'</tbody></table>';
+}
+
+// ── Render Funded page ────────────────────────────────────────────
+function renderFunded(funded, closed) {
+  const valid=funded.filter(r=>r['App #']&&(r['LO Name']||'').trim());
+  const totalRev=valid.reduce((s,r)=>s+num(r['Total Rev']),0);
+  const totalPayoff=valid.reduce((s,r)=>s+num(r['Payoff']),0);
+  const avgRev=valid.length>0?totalRev/valid.length:0;
+  const totalGAP=valid.filter(r=>num(r['GAP Total'])>0).length;
+  const totalVSC=valid.filter(r=>num(r['VSC Total'])>0).length;
+  const totalTW =valid.filter(r=>num(r['T & W Total'])>0).length;
+  const totalFunded=valid.filter(r=>String(r['Funded']).toUpperCase()==='TRUE').length;
+
+  document.getElementById('kpi-funded').innerHTML=[
+    {l:'Funded Deals',  v:String(totalFunded),  s:'Confirmed',                                                   c:'var(--accent)'},
+    {l:'Total Deals',   v:String(valid.length),  s:'In funded tab',                                               c:'var(--accent2)'},
+    {l:'Total Revenue', v:f$(totalRev),           s:'All deals',                                                   c:'var(--accent2)'},
+    {l:'Total Payoffs', v:f$(totalPayoff),         s:'Loan balances',                                               c:'var(--accent4)'},
+    {l:'Rev / Deal',    v:f$(avgRev),             s:'Average',                                                     c:'var(--accent4)'},
+    {l:'GAP',           v:String(totalGAP),       s:valid.length>0?Math.round(totalGAP/valid.length*100)+'% pen.':'—', c:'var(--accent3)'},
+    {l:'VSC',           v:String(totalVSC),       s:valid.length>0?Math.round(totalVSC/valid.length*100)+'% pen.':'—', c:'var(--accent2)'},
+    {l:'T&W',           v:String(totalTW),        s:valid.length>0?Math.round(totalTW/valid.length*100)+'% pen.':'—',  c:'var(--accent4)'},
+  ].map(k=>`<div class="kpi" style="--c:${k.c}"><div class="kpi-label">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
+
+  // Rev by LO bars
+  const loMap={};
+  valid.forEach(r=>{const lo=(r['LO Name']||'').trim();if(!lo)return;loMap[lo]=(loMap[lo]||0)+num(r['Total Rev']);});
+  const maxR=Math.max(...Object.values(loMap),1);
+  document.getElementById('funded-lo-bars').innerHTML='<div class="bars">'+Object.entries(loMap).sort((a,b)=>b[1]-a[1]).map(([lo,rev])=>barRow(lo,rev,maxR,lc(lo),f$(rev))).join('')+'</div>';
+
+  // Lender donut
+  const lM={};
+  valid.forEach(r=>{const l=(r['Lender']||'').trim();if(l)lM[l]=(lM[l]||0)+1;});
+  const lT=Object.values(lM).reduce((a,b)=>a+b,0)||1;
+  const LC=['var(--accent)','var(--accent2)','var(--accent4)','var(--accent3)','#a78bfa'];
+  const lE=Object.entries(lM).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('funded-lender').innerHTML=lE.length===0
+    ?'<div style="color:var(--muted);text-align:center;padding:20px;font-size:13px">No data</div>'
+    :`<div class="donut-wrap">${donut(lE.map((e,i)=>({p:e[1]/lT,c:LC[i%LC.length]})))}<div class="donut-legend">${lE.map((e,i)=>`<div class="lg-item"><div class="lg-dot" style="background:${LC[i%LC.length]}"></div><span>${e[0]}</span><span style="margin-left:auto;font-family:'DM Mono',monospace;color:var(--muted)">${Math.round(e[1]/lT*100)}%</span></div>`).join('')}</div></div>`;
+
+  // Funded table
+  document.getElementById('funded-badge').textContent=valid.length+' deals';
+  document.getElementById('funded-panel').innerHTML='<table class="tbl"><thead><tr><th>Date</th><th>App #</th><th>LO</th><th>Customer</th><th>State</th><th>Lender</th><th>Payoff</th><th>Rate</th><th>Term</th><th>GAP</th><th>VSC</th><th>T&W</th><th>Doc Fee</th><th>Lender Fee</th><th>Total Rev</th><th>Funded</th><th>Funds Rcvd</th></tr></thead><tbody>'+
+    valid.map(r=>{
+      const lo=(r['LO Name']||'').trim();
+      const name=((r['Customer First Name']||'')+' '+(r['Customer Last Name']||'')).trim()||'—';
+      const date=(r['Date']||'').toString().split('T')[0]||'—';
+      const rate=parseFloat(String(r['Rate']||'0').replace(/[%,]/g,''));
+      const rd=rate>0?(rate<1?(rate*100).toFixed(2)+'%':rate.toFixed(2)+'%'):'—';
+      const isFunded=String(r['Funded']).toUpperCase()==='TRUE';
+      const rcvd=String(r['Funds Received']).toUpperCase()==='TRUE';
+      return`<tr><td style="color:var(--muted)">${date}</td><td>${r['App #']}</td><td style="color:${lc(lo)};font-weight:700">${lo}</td><td>${name}</td><td>${r['Customer State']||'—'}</td><td>${r['Lender']||'—'}</td><td>${f$(r['Payoff'])}</td><td>${rd}</td><td>${r['Term']||'—'}</td><td>${num(r['GAP Total'])>0?bx(f$(r['GAP Total']),'g'):'—'}</td><td>${num(r['VSC Total'])>0?bx(f$(r['VSC Total']),'b'):'—'}</td><td>${num(r['T & W Total'])>0?bx(f$(r['T & W Total']),'y'):'—'}</td><td>${f$(r['Doc Fee'])}</td><td>${f$(r['Lender Fee Profit'])}</td><td style="color:var(--accent);font-weight:700">${f$(r['Total Rev'])}</td><td>${isFunded?bx('Yes','g'):bx('No','r')}</td><td>${rcvd?bx('Yes','g'):bx('No','r')}</td></tr>`;
+    }).join('')+'</tbody></table>';
+}
+
+fetchAllSheets();
+</script>
+</body>
+</html>
